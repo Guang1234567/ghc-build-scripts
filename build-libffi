@@ -34,21 +34,33 @@ if [ -z $prefix ]; then
 fi
 
 
-HOSTS=${args:-"aarch64-linux-android armv7-linux-androideabi aarch64-apple-ios x86_64-apple-ios arm-linux-gnueabihf"}
+#HOSTS=${args:-"arm-linux-androideabi"}
+HOSTS=${args:-"x86-linux-android"}
 
 
 if [ ! -d libffi ]; then
-    git clone https://github.com/zw3rk/libffi.git
+    git clone https://github.com/libffi/libffi.git
 fi
 
 cd libffi
 for host in $HOSTS; do
+		# extract the arch as the first component of the target triple
+    arch="${host%%-*}"
+    host_for_clang="$host"
+    host_for_toolchain="$host"
+    # rewrite aarch64 -> arm64; this is such a mess...
+    if [ "$arch" == "arm" ]; then host_for_clang="armv7-linux-androideabi"; fi
+    if [ "$arch" == "aarch64" ]; then arch="arm64"; fi
+    if [ "$arch" == "x86" ]; then host_for_toolchain="x86"; fi
+    if [ "$arch" == "x86_64" ]; then host_for_toolchain="x86_64"; fi
+    
     echo "Cleaning up build folder..."
     git clean -x -f -d
     git reset --hard HEAD
     ./autogen.sh
-    echo "Configuring $host..."
-    CC="${host}-clang" CXX="${host}-clang" \
+    echo "Configuring $host... ${host_for_clang}"
+    CC="${host_for_clang}-clang" CXX="${host_for_clang}-clang" \
+    CFLAGS="$CFLAGS -L$HOME/dev_kit/Android/sdk/ndk-bundle/toolchains/${host_for_toolchain}-4.9/prebuilt/darwin-x86_64/lib/gcc/i686-linux-android/4.9.x -L$HOME/dev_kit/Android/sdk/ndk-bundle/platforms/android-21/arch-$arch/usr/lib -I/Users/lihanguang/dev_kit/Android/sdk/ndk-bundle/platforms/android-21/arch-$arch/usr/include" \
         ./configure --prefix=$prefix/$host --host=$host \
         --enable-static=yes --enable-shared=yes \
         --silent

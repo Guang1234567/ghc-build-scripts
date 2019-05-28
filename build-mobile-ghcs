@@ -74,7 +74,7 @@ BUILD=1 # run make
 INSTALL=1 # run make install
 DEBUG=0 # debug values
 DEVEL=0 # Use development snapshot (fro the cross compiler only...)
-CLANG=
+CLANG="clang -L$HOME/dev_kit/Android/sdk/ndk-bundle/toolchains/arm-linux-androideabi-4.9/prebuilt/darwin-x86_64/lib/gcc/arm-linux-androideabi/4.9.x -I/Users/lihanguang/dev_kit/Android/sdk/ndk-bundle/sysroot/usr/include"
 
 while [ "$#" -gt 0 ]; do
     case "$1" in
@@ -94,7 +94,7 @@ while [ "$#" -gt 0 ]; do
     esac
 done
 
-TARGETS=${args:-"host x86_64-android armv7-android aarch64-android aarch64-ios x86_64-ios arm-raspberrypi"}
+TARGETS=${args:-"armv7-android"}
 if [ $DEBUG -eq 1 ]; then
     echo "   PREFIX=$PREFIX"
     echo "    ICONV=$ICONV"
@@ -107,7 +107,7 @@ if [ $DEBUG -eq 1 ]; then
     exit
 fi
 
-USE_DEVEL_FLAGS=" --enable-bootstrap-with-devel-snapshot --with-ghc=$PWD/_host/stage1/bin/ghc"
+USE_DEVEL_FLAGS=" --enable-bootstrap-with-devel-snapshot --with-ghc=/Users/lihanguang/Library/Caches/com.github.rikvdkleij.intellij-haskell/lts-13/programs/x86_64-osx/ghc-8.6.4/bin/ghc"
 
 for target in $TARGETS
 do
@@ -195,7 +195,7 @@ do
         make --silent clean && make -s distclean
         git clean -x --force -d --quiet -e "_*"
         git reset --hard HEAD
-        git submodule update --init --recursive
+        #git submodule update --init --recursive
         # force -fPIC, otherwise at least aarch64 will break.
         # echo "SRC_HC_OPTS += -fPIC" >> mk/build.mk
         # boot after mk/build.mk, to silence the warning about a missing mk/build.mk
@@ -212,6 +212,7 @@ do
         # the CC_STAGE0 is pretty much a hack, as for what ever
         # reason the ghc --info returns `gcc`.
         echo "CC=$CLANG CC_STAGE0=clang ./configure --silent $CONFIGURE_FLAGS"
+        CFLAGS="$CFLAGS -L$HOME/dev_kit/Android/sdk/ndk-bundle/toolchains/arm-linux-androideabi-4.9/prebuilt/darwin-x86_64/lib/gcc/arm-linux-androideabi/4.9.x"
         CC=$CLANG CC_STAGE0=clang ./configure --silent $CONFIGURE_FLAGS
     fi
     if [ $BUILD -eq 1 ]; then

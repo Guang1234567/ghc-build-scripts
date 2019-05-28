@@ -47,7 +47,8 @@ if [ -z $prefix ]; then
 fi
 
 
-TARGETS=${args:-"aarch64-linux-android arm-linux-androideabi"}
+#TARGETS=${args:-"arm-linux-androideabi aarch64-linux-android x86-linux-android "}
+TARGETS=${args:-"aarch64-linux-android"}
 
 
 if [ ! -f libiconv-$version.tar.gz ]; then
@@ -64,8 +65,8 @@ for target in $TARGETS; do
     ANDROID_HOST=$target
     ANDROID_BUILD=$host
     ANDROID_ARCH=$arch
-    ANDROID_NDK=$HOME/Library/Android/sdk/ndk-bundle
-    ANDROID_VERSION=24
+    ANDROID_NDK=${ANDROID_HOME:-$HOME/Library/Android/sdk}/ndk-bundle
+    ANDROID_VERSION=21
     ANDROID_TOOLCHAIN_VERSION=4.9
     case "$arch" in
         x86*) ANDROID_TOOLCHAIN=$arch-$ANDROID_TOOLCHAIN_VERSION ;;
@@ -83,10 +84,12 @@ for target in $TARGETS; do
         make clean --silent
     fi
     echo "Configuring $target..."
+    CC="${target}-clang"
     CFLAGS=$CFLAGS CPPFLAGS=$CPPFLAGS AR=$AR RANLIB=$RANLIB PATH=$PATH \
+    CFLAGS="$CFLAGS -L$ANDROID_NDK/toolchains/$ANDROID_TOOLCHAIN/prebuilt/$ANDROID_BUILD/lib/gcc/$target/${ANDROID_TOOLCHAIN_VERSION}.x" \
           ./configure --prefix=$prefix/$target --host=$ANDROID_HOST \
                       --with-sysroot=$ANDROID_SYSROOT --silent \
-                      --enable-shared=no --enable-static=yes
+                      --enable-shared=yes --enable-static=yes
     echo "Building $target"
     CFLAGS=$CFLAGS CPPFLAGS=$CPPFLAGS AR=$AR RANLIB=$RANLIB PATH=$PATH \
           make -j --silent
